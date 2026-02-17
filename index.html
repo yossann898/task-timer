@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="description" content="タスクに制限時間を設定し、カウントダウンで集中力を高めるタイマーアプリ">
+    <title>TaskPressure - タスクタイマー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- ヘッダー -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">⏱</span>
+                <h1>TaskPressure</h1>
+            </div>
+            <div class="header-right">
+                <div class="total-points" id="totalPoints">
+                    <span class="points-icon">⭐</span>
+                    <span class="points-value" id="totalPointsValue">0</span>
+                    <span class="points-label">pt</span>
+                </div>
+                <div class="pool-badge" id="poolBadge">
+                    <span class="pool-icon">🎰</span>
+                    <span class="pool-value" id="poolValue">0</span>
+                    <span class="pool-label">pool</span>
+                </div>
+                <div class="streak-badge" id="streakBadge">
+                    <span class="streak-icon">🔥</span>
+                    <span class="streak-value" id="streakValue">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- 空の状態 -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🎯</div>
+            <h2>タスクがありません</h2>
+            <p>右上の<strong>＋</strong>ボタンからタスクを追加して<br>時間制限に挑戦しよう！</p>
+        </div>
+
+        <!-- タスクリスト -->
+        <div class="task-list" id="taskList"></div>
+    </main>
+
+    <!-- FAB（フローティングアクションボタン） -->
+    <button class="fab" id="btnOpenModal" aria-label="タスクを追加">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+    </button>
+
+    <!-- タスク追加モーダル -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="addTaskModal">
+            <div class="modal-header">
+                <h2>新しいタスク</h2>
+                <button class="btn-close" id="btnCloseModal" aria-label="閉じる">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="taskForm" action="javascript:void(0)">
+                <div class="form-group">
+                    <label for="taskName">タスク名</label>
+                    <input type="text" id="taskName" placeholder="例：数学の宿題を終わらせる" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="taskTimeSlider">制限時間</label>
+                    <div class="slider-container">
+                        <div class="slider-display" id="sliderDisplay">25分</div>
+                        <input type="range" id="taskTimeSlider" min="1" max="180" step="1" value="25"
+                            class="time-slider">
+                        <div class="slider-labels">
+                            <span>1分</span>
+                            <span>1時間</span>
+                            <span>2時間</span>
+                            <span>3時間</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" id="btnSubmitTask">
+                    <span>タスクを追加</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- タスク完了オーバーレイ -->
+    <div class="timeup-overlay" id="completeOverlay">
+        <div class="timeup-content complete-content">
+            <h2>タスク完了！</h2>
+            <p id="completeTaskName"></p>
+            <div class="complete-breakdown">
+                <div class="breakdown-item immediate">
+                    <span class="breakdown-label">即時獲得</span>
+                    <span class="breakdown-value" id="immediatePoints">+0 pt</span>
+                </div>
+                <div class="breakdown-item pool-add">
+                    <span class="breakdown-label">🎰 プール積立</span>
+                    <span class="breakdown-value" id="poolAddPoints">+0 pt</span>
+                </div>
+            </div>
+            <p class="points-detail" id="pointsDetail"></p>
+            <div class="pool-withdraw-section" id="withdrawSection" style="display:none">
+                <p class="withdraw-info">プール残高: <strong id="withdrawPoolAmount">0</strong> pt</p>
+                <button class="btn-withdraw" id="btnWithdraw">🎰 ここで引き出す（80%獲得）</button>
+                <p class="withdraw-hint">続ければ3連勝で100%獲得！</p>
+            </div>
+            <button class="btn-timeup-dismiss btn-complete-dismiss" id="btnDismissComplete">OK（続ける）</button>
+        </div>
+    </div>
+
+    <!-- タイムアップオーバーレイ -->
+    <div class="timeup-overlay" id="timeupOverlay">
+        <div class="timeup-content">
+            <div class="timeup-icon">⏰</div>
+            <h2>タイムアップ！</h2>
+            <p id="timeupTaskName"></p>
+            <div class="pool-lost" id="poolLost" style="display:none">
+                <span class="lost-icon">💀</span>
+                <span class="lost-text">プール <strong id="lostAmount">0</strong> pt 没収！</span>
+            </div>
+            <p class="streak-reset-text">連勝リセット</p>
+            <button class="btn-timeup-dismiss" id="btnDismissTimeup">OK</button>
+        </div>
+    </div>
+
+    <!-- ジャックポットオーバーレイ -->
+    <div class="timeup-overlay" id="jackpotOverlay">
+        <div class="timeup-content jackpot-content">
+            <div class="timeup-icon jackpot-icon">🎰</div>
+            <h2>🎉 JACKPOT！🎉</h2>
+            <p>3連勝達成！</p>
+            <div class="jackpot-amount">
+                <span class="jackpot-value" id="jackpotAmount">+0</span>
+                <span class="jackpot-unit">pt</span>
+            </div>
+            <p class="jackpot-sub">プール全額を獲得！</p>
+            <button class="btn-timeup-dismiss btn-jackpot-dismiss" id="btnDismissJackpot">🎉 OK</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+</body>
+
+</html>
